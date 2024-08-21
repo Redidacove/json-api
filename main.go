@@ -38,12 +38,13 @@ func makeHTTPHandler(f apiFunc) http.HandlerFunc{
 }
 func main(){
 	http.HandleFunc("POST /user", makeHTTPHandler(handleCreateUserByID))
-	http.HandleFunc("GET /user/{id}", makeHTTPHandler(handleGetUserById))
+	http.HandleFunc("GET /user/{id}", makeHTTPHandler(handleGetUserByID))
+	http.HandleFunc("DELETE /user/{id}", makeHTTPHandler(handleDeleteUserByID))
 
 	http.ListenAndServe(":3000", nil)
 }
 
-func handleGetUserById(w http.ResponseWriter, r *http.Request) error{
+func handleGetUserByID(w http.ResponseWriter, r *http.Request) error{
 	if r.Method != http.MethodGet {
 		return WriteJSON(w, http.StatusMethodNotAllowed, apiError{Err: "Invalid Method", Status: http.StatusMethodNotAllowed})
 	}
@@ -57,6 +58,26 @@ func handleGetUserById(w http.ResponseWriter, r *http.Request) error{
 	if !user.valid {
 		return WriteJSON(w, http.StatusNotFound, InvalidUser)
 	}
+
+	return WriteJSON(w, http.StatusOK, user)
+}
+
+func handleDeleteUserByID(w http.ResponseWriter, r *http.Request) error{
+	if r.Method != http.MethodDelete {
+		return WriteJSON(w, http.StatusMethodNotAllowed, apiError{Err: "Invalid Method", Status: http.StatusMethodNotAllowed})
+	}
+	id := r.PathValue("id")
+	i, err := strconv.Atoi(id)
+	if err != nil {
+        fmt.Println("Error:", err)
+    }
+
+	user := UsersByID[i]
+	if !user.valid {
+		return WriteJSON(w, http.StatusNotFound, InvalidUser)
+	}
+
+	UsersByID[user.ID] = User{}
 
 	return WriteJSON(w, http.StatusOK, user)
 }
